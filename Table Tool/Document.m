@@ -267,9 +267,9 @@
     NSArray *rowArray = [_data objectAtIndex:rowIndex];
     if(rowArray.count > tableColumn.identifier.integerValue){
         if([rowArray[tableColumn.identifier.integerValue] isKindOfClass:[NSDecimalNumber class]]){
-            textCell.alignment = NSRightTextAlignment;
+            textCell.alignment = NSTextAlignmentRight;
         }else{
-            textCell.alignment = NSLeftTextAlignment;
+            textCell.alignment = NSTextAlignmentLeft;
         }
     }
 }
@@ -326,7 +326,7 @@
 {
     validPBoardTypes = [NSArray arrayWithObjects:TTRowInternalPboardType,
                                                  NSPasteboardTypeTabularText,
-                                                 NSStringPboardType,
+                                                 NSPasteboardTypeString,
                                                  nil];
 }
 
@@ -569,7 +569,7 @@ writeRowsWithIndexes:(NSIndexSet *)rowIndexes
         NSTableColumn *tableColumn = [[NSTableColumn alloc] initWithIdentifier:[NSString stringWithFormat:@"%d",i]];
         tableColumn.dataCell = dataCell;
 		tableColumn.headerCell.stringValue = i < columnNames.count ? columnNames[i] : [self generateColumnName:i];
-        ((NSCell *)tableColumn.headerCell).alignment = NSCenterTextAlignment;
+        ((NSCell *)tableColumn.headerCell).alignment = NSTextAlignmentCenter;
         [self.tableView addTableColumn: tableColumn];
     }
 }
@@ -579,7 +579,7 @@ writeRowsWithIndexes:(NSIndexSet *)rowIndexes
         for(int i = 0; i < [self.tableView.tableColumns count]; i++) {
             NSTableColumn *tableColumn = self.tableView.tableColumns[i];
             tableColumn.headerCell.stringValue = [self generateColumnName:i];
-            ((NSCell *)tableColumn.headerCell).alignment = NSCenterTextAlignment;
+            ((NSCell *)tableColumn.headerCell).alignment = NSTextAlignmentCenter;
         }
     }
 }
@@ -895,7 +895,7 @@ writeRowsWithIndexes:(NSIndexSet *)rowIndexes
         if(self.csvConfig.firstRowAsHeader){
             col.headerCell.stringValue = [columnNames objectAtIndex:((NSString *)columnIds[i]).integerValue];
         }
-        ((NSCell *)col.headerCell).alignment = NSCenterTextAlignment;
+        ((NSCell *)col.headerCell).alignment = NSTextAlignmentCenter;
         [self.tableView addTableColumn:col];
         [self.tableView moveColumn:[self.tableView numberOfColumns]-1 toColumn:[columnIndexes firstIndex]+i];
     }
@@ -1126,7 +1126,7 @@ writeRowsWithIndexes:(NSIndexSet *)rowIndexes
     [accessoryViewController selectFormatByConfig];
     savePanel.allowedFileTypes = [NSArray arrayWithObject:@"csv"];
     [savePanel beginSheetModalForWindow:window completionHandler:^(NSInteger result){
-        if (result == NSFileHandlingPanelOKButton)
+        if (result == NSModalResponseOK)
         {
 			NSError *error = nil;
 			NSData *data = [self dataWithCSVConfig:accessoryViewController.config error:&error];
