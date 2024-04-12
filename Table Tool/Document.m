@@ -752,26 +752,18 @@ writeRowsWithIndexes:(NSIndexSet *)rowIndexes
     [self.toolBarButtonsAddColumn setImage:[ToolbarIcons imageOfAddRightColumnIcon] forSegment:1];
     NSSize addColumnSize = self.toolBarButtonsAddColumn.intrinsicContentSize;
     addColumnSize.height = 30;
-    self.toolbarItemAddColumn.minSize = addColumnSize;
-    self.toolbarItemAddColumn.maxSize = addColumnSize;
     [self.toolBarButtonsAddRow setImage:[ToolbarIcons imageOfAddRowAboveIcon] forSegment:0];
     [self.toolBarButtonsAddRow setImage:[ToolbarIcons imageOfAddRowBelowIcon] forSegment:1];
     NSSize addRowSize = self.toolBarButtonsAddRow.intrinsicContentSize;
     addRowSize.height = 30;
-    self.toolbarItemAddRow.minSize = addRowSize;
-    self.toolbarItemAddRow.maxSize = addRowSize;
     self.toolBarButtonDeleteColumn.image = [ToolbarIcons imageOfDeleteColumnIcon];
     NSSize deleteColumnSize = self.toolBarButtonDeleteColumn.intrinsicContentSize;
     deleteColumnSize.width = 35;
     deleteColumnSize.height = 30;
-    self.toolbarItemDeleteColumn.minSize = deleteColumnSize;
-    self.toolbarItemDeleteColumn.maxSize = deleteColumnSize;
     self.toolBarButtonDeleteRow.image = [ToolbarIcons imageOfDeleteRowIcon];
     NSSize deleteRowSize = self.toolBarButtonDeleteRow.intrinsicContentSize;
     deleteRowSize.width = 35;
     deleteRowSize.height = 30;
-    self.toolbarItemDeleteRow.minSize = deleteRowSize;
-    self.toolbarItemDeleteRow.maxSize = deleteRowSize;
 }
 
 -(void)enableToolbarButtons{
