@@ -1,10 +1,9 @@
 //
 //  CSVTableView.swift
-//  Table Tool
+//  Table2
 //
-//  Created by Claude on 2025-06-27.
-//  Copyright (c) 2025 Egger Apps. All rights reserved.
-//
+//  Table2 created by Claude on 2025-06-27 for tifalab
+//  Original TableTool (c) 2015 Egger Apps. All rights reserved//
 
 import SwiftUI
 import Foundation
@@ -105,6 +104,22 @@ struct CSVTableView: View {
         }
         .onKeyPress(.tab) {
             handleTabNavigation()
+            return .handled
+        }
+        .onKeyPress(.upArrow) {
+            handleArrowNavigation(.up)
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            handleArrowNavigation(.down)
+            return .handled
+        }
+        .onKeyPress(.leftArrow) {
+            handleArrowNavigation(.left)
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            handleArrowNavigation(.right)
             return .handled
         }
         .onAppear {
@@ -208,6 +223,36 @@ struct CSVTableView: View {
         // If we're at the end, do nothing (as requested)
     }
     
+    private func handleArrowNavigation(_ direction: ArrowDirection) {
+        // If no cell is currently focused, start with the first cell
+        guard let currentFocus = focusedCell else {
+            let startRowIndex = document.configuration.firstRowAsHeader ? 1 : 0
+            if startRowIndex < document.data.count {
+                let firstCell = CellPosition(row: startRowIndex, column: 0)
+                selectCell(firstCell)
+            }
+            return
+        }
+        
+        var newPosition = currentFocus
+        
+        switch direction {
+        case .up:
+            newPosition.row = max(dataRowIndices.lowerBound, currentFocus.row - 1)
+        case .down:
+            newPosition.row = min(dataRowIndices.upperBound - 1, currentFocus.row + 1)
+        case .left:
+            newPosition.column = max(0, currentFocus.column - 1)
+        case .right:
+            newPosition.column = min(document.maxColumnCount - 1, currentFocus.column + 1)
+        }
+        
+        // Only move if the position actually changed
+        if newPosition != currentFocus {
+            selectCell(newPosition)
+        }
+    }
+    
     private func initializeColumnWidths() {
         let columnCount = document.maxColumnCount
         if columnWidths.count != columnCount {
@@ -255,9 +300,13 @@ struct CSVTableView: View {
     }
 }
 
-struct CellPosition: Hashable {
-    let row: Int
-    let column: Int
+struct CellPosition: Hashable, Equatable {
+    var row: Int
+    var column: Int
+}
+
+enum ArrowDirection {
+    case up, down, left, right
 }
 
 struct HeaderCell: View {

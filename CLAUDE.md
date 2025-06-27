@@ -69,9 +69,10 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - **Spreadsheet-like Editing**: 
   - Single-click to select individual cells
   - Click-drag selection for multi-cell ranges
-  - Double-click any cell (including empty ones) to edit inline
+  - Single-click any cell (including empty ones) to edit inline
   - Enter to save, Escape to cancel
   - TAB key navigation: moves to next cell in row, then to first cell of next row
+  - Arrow key navigation: ↑↓←→ moves between cells
   - Click outside table to clear selections
 - **Column Resizing**: Drag column borders to adjust width, with minimum width protection
 - **Format Detection**: Maintains heuristic CSV format detection
@@ -106,6 +107,10 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - ✅ Added column resizing with draggable borders (jitter-free, snap-to-final)
 - ✅ Dynamic column width management with minimum width constraints
 - ✅ Hover cursor changes for resize handles
+- ✅ Changed cell editing from double-click to single-click
+- ✅ Added arrow key navigation (↑↓←→) for cell movement
+- ✅ Narrowed sidebar default width (250px → 180px)
+- ✅ Removed tip section from sidebar
 
 **Known Issues:**
 - **Column Resize Jitter**: ✅ RESOLVED (2025-06-27)
@@ -123,7 +128,9 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - `ColumnResizeHandle` component with visual feedback and cursor management
 - Dynamic width storage per column with automatic initialization
 - TAB navigation: `focusedCell` state tracks current focus, moves logically through cells
+- Arrow key navigation: Uses `ArrowDirection` enum, respects data boundaries and header settings
 - Column resize: Snap-to-final approach - no state changes during drag, single atomic update on completion
+- Single-click editing: Replaced double-click with single-click for immediate cell editing
 
 **Current Implementation Details:**
 - Column widths stored in `@State private var columnWidths: [CGFloat]`

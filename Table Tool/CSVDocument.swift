@@ -1,10 +1,9 @@
 //
 //  CSVDocument.swift
-//  Table Tool
+//  Table2
 //
-//  Created by Claude on 2025-06-27.
-//  Copyright (c) 2025 Egger Apps. All rights reserved.
-//
+//  Table2 created by Claude on 2025-06-27 for tifalab
+//  Original TableTool (c) 2015 Egger Apps. All rights reserved//
 
 import SwiftUI
 import UniformTypeIdentifiers

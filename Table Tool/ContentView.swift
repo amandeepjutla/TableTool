@@ -1,9 +1,9 @@
 //
 //  ContentView.swift
-//  Table Tool
+//  Table2
 //
-//  Created by Claude on 2025-06-27.
-//  Copyright (c) 2025 Egger Apps. All rights reserved.
+//  Table2 created by Claude on 2025-06-27 for tifalab
+//  Original TableTool (c) 2015 Egger Apps. All rights reserved
 //
 
 import SwiftUI
@@ -18,7 +18,7 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             FormatSidebar(document: $document, showingFormatSheet: $showingFormatSheet)
-                .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 300)
+                .navigationSplitViewColumnWidth(min: 150, ideal: 180, max: 250)
         } detail: {
             CSVTableView(
                 document: $document,
@@ -114,16 +114,6 @@ struct FormatSidebar: View {
             }
             .font(.caption)
             .foregroundColor(.secondary)
-            
-            Divider()
-            
-            Text("💡 Tip")
-                .font(.headline)
-            
-            Text("To use tabs, drag one window into another, or use Window → Merge All Windows (⌥⌘M)")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.leading)
             
             Spacer()
         }
