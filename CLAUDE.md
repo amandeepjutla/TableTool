@@ -61,18 +61,18 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" -only-testing:Ta
 
 ## SwiftUI Modernization (2025)
 
-**New Architecture**: The app has been modernized to SwiftUI with tabbed document support:
+**Current Architecture**: The app has been fully modernized to SwiftUI with tabbed document support:
 
-### New Swift Files
-- `TableToolApp.swift` - Main SwiftUI App with DocumentGroup (replaces AppDelegate)
-- `CSVDocument.swift` - FileDocument conforming model (replaces NSDocument)
+### Swift Files
+- `TableToolApp.swift` - Main SwiftUI App with DocumentGroup
+- `CSVDocument.swift` - FileDocument conforming model
 - `ContentView.swift` - Main interface with NavigationSplitView
-- `CSVTableView.swift` - SwiftUI table view with editable cells
+- `CSVTableView.swift` - SwiftUI table view with editable cells and drag selection
 - `FormatConfigurationView.swift` - SwiftUI format configuration sheet
-- `CSVConfiguration.swift` - Swift struct (replaces Objective-C class)
-- `CSVReader.swift` - Swift CSV parser (replaces Objective-C)
-- `CSVWriter.swift` - Swift CSV writer (replaces Objective-C)
-- `CSVHeuristic.swift` - Swift format detection (replaces Objective-C)
+- `CSVConfiguration.swift` - Swift struct for CSV format settings
+- `CSVReader.swift` - Swift CSV parser
+- `CSVWriter.swift` - Swift CSV writer
+- `CSVHeuristic.swift` - Swift format detection
 
 ### Key Features
 - **Automatic Tabbing**: DocumentGroup provides native macOS tabbed windows
@@ -80,7 +80,8 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" -only-testing:Ta
   - Or drag one window into another to create tabs
 - **Modern UI**: NavigationSplitView with sidebar and detail view
 - **Spreadsheet-like Editing**: 
-  - Single-click to select individual cells
+  - Single-click to select individual cells (has delay issue - needs optimization)
+  - **Click-drag selection**: BROKEN - drag gesture not working properly, conflicts with tap gesture
   - Double-click any cell (including empty ones) to edit inline
   - Enter to save, Escape to cancel
   - Fixed-size grid layout for consistent interaction
@@ -90,22 +91,30 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" -only-testing:Ta
 - **Window Commands**: ⌥⌘M (merge windows), ⌘⇧[ / ⌘⇧] (tab navigation)
 
 ### Architecture Changes
-- **Removed**: NSDocument, AppDelegate, main.m, XIB files
-- **Updated**: Info.plist uses modern UTType system instead of NSDocumentClass
-- **Swift 6.0**: Full Swift migration with proper error handling
+- **Removed**: All legacy Objective-C files, NSDocument, AppDelegate, main.m, XIB files
+- **Pure Swift**: Complete Swift 6.0 implementation with modern SwiftUI patterns
+- **Updated**: Info.plist uses modern UTType system
 - **macOS 15+**: Modern deployment target
 
 ### Building the Modern Version
 1. All Swift files are included in Xcode project
-2. Legacy Objective-C files remain for reference but are not compiled
+2. No legacy Objective-C files - completely removed from project
 3. Build settings configured for Swift 6.0 and macOS 15+
 4. Document types properly configured for CSV and text files
 
-## Legacy Notes
+## Known Issues (2025-06-27)
 
-**Original Language**: Pure Objective-C with Cocoa frameworks (no external dependencies)
-**Target**: macOS desktop application distributed via Mac App Store
-**Build System**: Xcode project files (.xcodeproj)
-**Legacy UI**: Interface Builder (.xib) with NSTableView for data display
+**CSVTableView.swift Selection Issues:**
+1. **Click-drag selection is broken**: The drag gesture implementation conflicts with tap gestures. The simultaneousGesture approach doesn't work properly.
+2. **Single-click delay**: There's a noticeable delay when selecting cells due to gesture conflicts between single tap, double tap, and drag.
+3. **Drag gesture problems**: Using `value.translation.width/height` for calculating cell positions is incorrect - should use location-based approach.
+
+**Recommended fixes:**
+- Remove simultaneousGesture and implement proper gesture prioritization
+- Use DragGesture with location-based cell position calculation instead of translation
+- Optimize tap gesture handling to eliminate selection delay
+- Consider using UIKit-style gesture recognizer patterns in SwiftUI
+
+## Project Scope
 
 The codebase follows a focused scope: "great and simple CSV file editor and nothing more" - avoid adding features outside core CSV editing functionality.
