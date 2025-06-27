@@ -16,6 +16,7 @@ struct CSVTableView: View {
     @State private var selectedCells: Set<CellPosition> = []
     @State private var dragStartPosition: CellPosition?
     @State private var isDragging = false
+    @State private var focusedCell: CellPosition?
     
     var body: some View {
         ScrollView([.horizontal, .vertical]) {
@@ -43,6 +44,7 @@ struct CSVTableView: View {
                                 isSelected: selectedCells.contains(CellPosition(row: rowIndex, column: columnIndex)),
                                 isRowSelected: selectedRows.contains(rowIndex),
                                 isColumnSelected: selectedColumns.contains(columnIndex),
+                                isCurrentlyFocused: focusedCell == CellPosition(row: rowIndex, column: columnIndex),
                                 position: CellPosition(row: rowIndex, column: columnIndex)
                             ) { newValue in
                                 document.updateCell(row: rowIndex, column: columnIndex, value: newValue)
@@ -70,6 +72,10 @@ struct CSVTableView: View {
             clearAllSelections()
             return .handled
         }
+        .onKeyPress(.tab) {
+            handleTabNavigation()
+            return .handled
+        }
     }
     
     private var dataRowIndices: Range<Int> {
@@ -89,6 +95,7 @@ struct CSVTableView: View {
         selectedCells = [position]
         selectedRows.removeAll()
         selectedColumns.removeAll()
+        focusedCell = position
     }
     
     private func startDrag(at position: CellPosition) {
@@ -131,6 +138,37 @@ struct CSVTableView: View {
         selectedCells.removeAll()
         selectedRows.removeAll()
         selectedColumns.removeAll()
+        focusedCell = nil
+    }
+    
+    private func handleTabNavigation() {
+        // If no cell is currently focused, start with the first cell
+        guard let currentFocus = focusedCell else {
+            let startRowIndex = document.configuration.firstRowAsHeader ? 1 : 0
+            if startRowIndex < document.data.count {
+                let firstCell = CellPosition(row: startRowIndex, column: 0)
+                selectCell(firstCell)
+            }
+            return
+        }
+        
+        // Move to next column in the same row
+        let nextColumn = currentFocus.column + 1
+        if nextColumn < document.maxColumnCount {
+            let nextCell = CellPosition(row: currentFocus.row, column: nextColumn)
+            selectCell(nextCell)
+            return
+        }
+        
+        // Move to first column of the next row
+        let nextRow = currentFocus.row + 1
+        if nextRow < document.data.count {
+            let nextCell = CellPosition(row: nextRow, column: 0)
+            selectCell(nextCell)
+            return
+        }
+        
+        // If we're at the end, do nothing (as requested)
     }
     
     
@@ -187,6 +225,7 @@ struct DataCell: View {
     let isSelected: Bool
     let isRowSelected: Bool
     let isColumnSelected: Bool
+    let isCurrentlyFocused: Bool
     let position: CellPosition
     let onTextChange: (String) -> Void
     let onCellTap: (CellPosition) -> Void

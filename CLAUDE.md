@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Table Tool is a macOS native application written in Objective-C using the Cocoa framework. It's a simple CSV editor designed to handle various CSV formats, encodings, and delimiters automatically.
+Table Tool is a macOS native application written in Swift using SwiftUI. It's a simple CSV editor designed to handle various CSV formats, encodings, and delimiters automatically. The app was fully modernized from Objective-C/Cocoa to Swift/SwiftUI in 2025.
 
 ## Development Commands
 
@@ -14,7 +14,7 @@ Table Tool is a macOS native application written in Objective-C using the Cocoa 
 open "Table Tool.xcodeproj"
 
 # Build from command line
-xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" build
+xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" -destination "platform=macOS" build
 
 # Clean build
 xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
@@ -22,57 +22,44 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 
 ### Testing
 ```bash
-# Run tests from command line
-xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" test
+# NOTE: Tests are currently broken due to legacy Objective-C test files referencing removed headers
+# The legacy test file Table_ToolTests.m references CSVReader.h, CSVConfiguration.h, CSVHeuristic.h 
+# which no longer exist after the Swift modernization
 
-# Run specific test
-xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" -only-testing:Table_ToolTests test
+# This command will fail until tests are rewritten for Swift:
+# xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" -destination "platform=macOS" test
 ```
 
 ## Architecture
 
-### Core Components
+### Current Swift Architecture (2025)
 
-**Document Architecture**: Follows NSDocument-based pattern with `Document.h/.m` as the main document class.
+**Document Architecture**: Uses SwiftUI's DocumentGroup with FileDocument protocol via `CSVDocument.swift`.
 
-**CSV Processing Engine**:
-- `CSVReader` - Parses CSV files with various formats
-- `CSVWriter` - Exports CSV with different configurations  
-- `CSVConfiguration` - Manages CSV format settings (delimiters, encoding, quotes)
-- `CSVHeuristic` - Automatically detects CSV format using 11 different configuration attempts
+**CSV Processing Engine** (Swift):
+- `CSVReader.swift` - Parses CSV files with various formats
+- `CSVWriter.swift` - Exports CSV with different configurations  
+- `CSVConfiguration.swift` - Manages CSV format settings (delimiters, encoding, quotes)
+- `CSVHeuristic.swift` - Automatically detects CSV format using heuristic analysis
 
-**UI Controllers**:
-- `TTFormatViewController` - Format selection and configuration panel
-- `TTErrorViewController` - Error display and handling
-- Interface files in `Base.lproj/` define the UI layout
+**SwiftUI Views**:
+- `TableToolApp.swift` - Main App entry point with DocumentGroup
+- `ContentView.swift` - Main interface with NavigationSplitView
+- `CSVTableView.swift` - Spreadsheet-like table view with cell editing and selection
+- `FormatConfigurationView.swift` - Format selection and configuration sheet
 
 ### Key Files
-- `AppDelegate.h/.m` - Standard Cocoa application lifecycle
-- `main.m` - Application entry point
-- `Constants.h/.m` - Application-wide constants
-- `Info.plist` - App metadata and document type associations
-- `Table Tool.entitlements` - Sandboxing and permissions
+- `Info.plist` - App metadata and document type associations (supports CSV and TXT files)
+- `Table Tool.entitlements` - Sandboxing permissions for file access
+- `Images.xcassets/` - App icon and visual assets
 
-### Test Structure
-- `Table_ToolTests.m` - Main test suite using XCTest framework
+### Test Structure (Legacy - Currently Broken)
+- `Table_ToolTests.m` - Legacy Objective-C test suite (broken, references removed headers)
 - `Reading Test Documents/` - 15 CSV test cases for parsing edge cases
 - `Heuristic Test Documents/` - 18 test cases for format detection
-- Tests cover encoding issues, malformed CSV, quote escaping, and delimiter detection
+- Tests need to be rewritten in Swift to work with the modernized codebase
 
-## SwiftUI Modernization (2025)
-
-**Current Architecture**: The app has been fully modernized to SwiftUI with tabbed document support:
-
-### Swift Files
-- `TableToolApp.swift` - Main SwiftUI App with DocumentGroup
-- `CSVDocument.swift` - FileDocument conforming model
-- `ContentView.swift` - Main interface with NavigationSplitView
-- `CSVTableView.swift` - SwiftUI table view with editable cells and drag selection
-- `FormatConfigurationView.swift` - SwiftUI format configuration sheet
-- `CSVConfiguration.swift` - Swift struct for CSV format settings
-- `CSVReader.swift` - Swift CSV parser
-- `CSVWriter.swift` - Swift CSV writer
-- `CSVHeuristic.swift` - Swift format detection
+## Key Features and Capabilities
 
 ### Key Features
 - **Automatic Tabbing**: DocumentGroup provides native macOS tabbed windows
@@ -80,11 +67,12 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" -only-testing:Ta
   - Or drag one window into another to create tabs
 - **Modern UI**: NavigationSplitView with sidebar and detail view
 - **Spreadsheet-like Editing**: 
-  - Single-click to select individual cells (has delay issue - needs optimization)
-  - **Click-drag selection**: BROKEN - drag gesture not working properly, conflicts with tap gesture
+  - Single-click to select individual cells
+  - Click-drag selection for multi-cell ranges
   - Double-click any cell (including empty ones) to edit inline
   - Enter to save, Escape to cancel
   - Fixed-size grid layout for consistent interaction
+  - Click outside table to clear selections
 - **Format Detection**: Maintains heuristic CSV format detection
 - **Format Configuration**: Clean GroupBox-based UI that works properly on macOS
 - **Keyboard Shortcuts**: Cmd+R (add row), Cmd+C (add column), etc.
@@ -102,19 +90,30 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" -only-testing:Ta
 3. Build settings configured for Swift 6.0 and macOS 15+
 4. Document types properly configured for CSV and text files
 
-## Known Issues (2025-06-27)
+## Recent Fixes (2025-06-27)
 
-**CSVTableView.swift Selection Issues:**
-1. **Click-drag selection is broken**: The drag gesture implementation conflicts with tap gestures. The simultaneousGesture approach doesn't work properly.
-2. **Single-click delay**: There's a noticeable delay when selecting cells due to gesture conflicts between single tap, double tap, and drag.
-3. **Drag gesture problems**: Using `value.translation.width/height` for calculating cell positions is incorrect - should use location-based approach.
+**CSVTableView.swift Selection - RESOLVED:**
+- ✅ Fixed gesture conflicts between tap and drag gestures
+- ✅ Implemented location-based drag gesture calculation
+- ✅ Eliminated single-click selection delays
+- ✅ Added background tap gesture to clear selections
+- ✅ Fixed visual state persistence issues after editing
+- ✅ Escape key clears selections
 
-**Recommended fixes:**
-- Remove simultaneousGesture and implement proper gesture prioritization
-- Use DragGesture with location-based cell position calculation instead of translation
-- Optimize tap gesture handling to eliminate selection delay
-- Consider using UIKit-style gesture recognizer patterns in SwiftUI
+**Technical Implementation:**
+- Single `.gesture()` modifier with proper gesture prioritization
+- Location-based drag calculation using `offsetX/offsetY` from start position
+- 5-pixel drag threshold to distinguish taps from drags
+- Background tap gesture on ScrollView to clear selections
+- Simplified background color logic without editing state interference
 
 ## Project Scope
 
-The codebase follows a focused scope: "great and simple CSV file editor and nothing more" - avoid adding features outside core CSV editing functionality.
+The codebase follows a focused scope: **"great and simple CSV file editor and nothing more"**. 
+
+Key principles from the project maintainers:
+- Avoid adding features outside core CSV editing functionality
+- No formatting options or features like formulas
+- Focus on handling CSV format variations, encodings, and delimiters
+- Maintain simplicity and ease of use
+- Any new features must align with the core CSV editing mission
