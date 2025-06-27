@@ -16,19 +16,30 @@ struct CSVDocument: FileDocument {
     // MARK: - Document properties
     var data: [[String]]
     var configuration: CSVConfiguration
-    var maxColumnCount: Int
+    private var _maxColumnCount: Int?
+    
+    var maxColumnCount: Int {
+        if let cached = _maxColumnCount {
+            return cached
+        }
+        return data.map { $0.count }.max() ?? 1
+    }
+    
+    private mutating func updateMaxColumnCount() {
+        _maxColumnCount = data.map { $0.count }.max() ?? 1
+    }
     
     // MARK: - Initializers
     init() {
         self.data = [[""]]
         self.configuration = CSVConfiguration()
-        self.maxColumnCount = 1
+        self._maxColumnCount = 1
     }
     
     init(data: [[String]], configuration: CSVConfiguration = CSVConfiguration()) {
         self.data = data
         self.configuration = configuration
-        self.maxColumnCount = data.map { $0.count }.max() ?? 1
+        self._maxColumnCount = nil // Will be calculated lazily
     }
     
     // MARK: - FileDocument methods
@@ -64,7 +75,7 @@ struct CSVDocument: FileDocument {
         }
         
         self.data = parsedData.isEmpty ? [[""]] : parsedData
-        self.maxColumnCount = data.map { $0.count }.max() ?? 1
+        self._maxColumnCount = nil // Will be calculated lazily when accessed
     }
     
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
@@ -88,6 +99,7 @@ extension CSVDocument {
         } else {
             data.append(newRow)
         }
+        // Column count unchanged, no need to invalidate cache
     }
     
     mutating func deleteRow(at index: Int) {
@@ -96,11 +108,13 @@ extension CSVDocument {
         if data.isEmpty {
             data = [[""]]
         }
+        // Deleting a row might change max column count
+        updateMaxColumnCount()
     }
     
     mutating func addColumn(at index: Int? = nil) {
         let insertIndex = index ?? maxColumnCount
-        maxColumnCount += 1
+        let newMaxCount = maxColumnCount + 1
         
         for i in 0..<data.count {
             if insertIndex < data[i].count {
@@ -109,6 +123,9 @@ extension CSVDocument {
                 data[i].append("")
             }
         }
+        
+        // Update cached value directly since we know it increased by 1
+        _maxColumnCount = newMaxCount
     }
     
     mutating func deleteColumn(at index: Int) {
@@ -120,15 +137,20 @@ extension CSVDocument {
             }
         }
         
-        maxColumnCount = data.map { $0.count }.max() ?? 1
+        // Recalculate and cache max column count
+        updateMaxColumnCount()
         if maxColumnCount == 0 {
             data = [[""]]
-            maxColumnCount = 1
+            _maxColumnCount = 1
         }
     }
     
     mutating func updateCell(row: Int, column: Int, value: String) {
         guard row < data.count else { return }
+        
+        // Check if we need to extend the row
+        let currentRowLength = data[row].count
+        let needsExtension = column >= currentRowLength
         
         // Extend row if necessary
         while data[row].count <= column {
@@ -136,6 +158,15 @@ extension CSVDocument {
         }
         
         data[row][column] = value
-        maxColumnCount = max(maxColumnCount, data[row].count)
+        
+        // Only update max column count if we extended a row
+        if needsExtension {
+            let newRowLength = data[row].count
+            if let cached = _maxColumnCount {
+                _maxColumnCount = max(cached, newRowLength)
+            } else {
+                // Will be calculated on next access
+            }
+        }
     }
 }

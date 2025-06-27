@@ -11,73 +11,83 @@ class CSVReader {
     private let data: Data
     private let configuration: CSVConfiguration
     private var currentPosition: Int = 0
-    private var csvString: String
+    private let csvBytes: [UInt8]
+    private let separatorByte: UInt8
+    private let quoteByte: UInt8
+    private let escapeByte: UInt8
+    private let crByte: UInt8 = 13 // \r
+    private let lfByte: UInt8 = 10 // \n
     
     var isAtEnd: Bool {
-        return currentPosition >= csvString.count
+        return currentPosition >= csvBytes.count
     }
     
     init(data: Data, configuration: CSVConfiguration) {
         self.data = data
         self.configuration = configuration
         
-        // Convert data to string using the specified encoding
-        self.csvString = String(data: data, encoding: configuration.encoding) ?? ""
+        // Convert to byte array for efficient processing
+        self.csvBytes = Array(data)
+        
+        // Cache separator bytes for performance
+        self.separatorByte = configuration.columnSeparator.utf8.first ?? 44 // Default to comma
+        self.quoteByte = configuration.quoteCharacter.utf8.first ?? 34 // Default to quote
+        self.escapeByte = configuration.escapeCharacter.utf8.first ?? 34 // Default to quote
     }
     
     init(string: String, configuration: CSVConfiguration) {
         self.data = Data()
         self.configuration = configuration
-        self.csvString = string
+        
+        // Convert string to UTF-8 bytes for efficient processing
+        self.csvBytes = Array(string.utf8)
+        
+        // Cache separator bytes for performance
+        self.separatorByte = configuration.columnSeparator.utf8.first ?? 44
+        self.quoteByte = configuration.quoteCharacter.utf8.first ?? 34
+        self.escapeByte = configuration.escapeCharacter.utf8.first ?? 34
     }
     
     func readLine() throws -> [String]? {
         guard !isAtEnd else { return nil }
         
         var fields: [String] = []
-        var currentField = ""
+        var currentFieldBytes: [UInt8] = []
         var insideQuotes = false
         var i = currentPosition
         
-        while i < csvString.count {
-            let char = csvString[csvString.index(csvString.startIndex, offsetBy: i)]
-            let charString = String(char)
+        while i < csvBytes.count {
+            let byte = csvBytes[i]
             
             if insideQuotes {
-                if charString == configuration.quoteCharacter {
+                if byte == quoteByte {
                     // Check if this is an escaped quote
                     let nextIndex = i + 1
-                    if nextIndex < csvString.count {
-                        let nextChar = csvString[csvString.index(csvString.startIndex, offsetBy: nextIndex)]
-                        if String(nextChar) == configuration.escapeCharacter {
-                            currentField += charString
-                            i += 1 // Skip the escape character
-                        } else {
-                            insideQuotes = false
-                        }
+                    if nextIndex < csvBytes.count && csvBytes[nextIndex] == escapeByte {
+                        currentFieldBytes.append(byte)
+                        i += 1 // Skip the escape character
                     } else {
                         insideQuotes = false
                     }
                 } else {
-                    currentField += charString
+                    currentFieldBytes.append(byte)
                 }
             } else {
-                if charString == configuration.quoteCharacter {
+                if byte == quoteByte {
                     insideQuotes = true
-                } else if charString == configuration.columnSeparator {
-                    fields.append(currentField)
-                    currentField = ""
-                } else if charString == "\n" || charString == "\r" {
+                } else if byte == separatorByte {
+                    // Convert current field bytes to string and add to fields
+                    let fieldString = String(data: Data(currentFieldBytes), encoding: configuration.encoding) ?? ""
+                    fields.append(fieldString)
+                    currentFieldBytes.removeAll(keepingCapacity: true)
+                } else if byte == lfByte || byte == crByte {
                     // Handle different line endings
-                    if charString == "\r" && i + 1 < csvString.count {
-                        let nextChar = csvString[csvString.index(csvString.startIndex, offsetBy: i + 1)]
-                        if nextChar == "\n" {
-                            i += 1 // Skip the \n in \r\n
-                        }
+                    if byte == crByte && i + 1 < csvBytes.count && csvBytes[i + 1] == lfByte {
+                        i += 1 // Skip the \n in \r\n
                     }
                     break
                 } else {
-                    currentField += charString
+                    currentFieldBytes.append(byte)
                 }
             }
             
@@ -85,7 +95,8 @@ class CSVReader {
         }
         
         // Add the last field
-        fields.append(currentField)
+        let fieldString = String(data: Data(currentFieldBytes), encoding: configuration.encoding) ?? ""
+        fields.append(fieldString)
         
         // Update position for next read
         currentPosition = i + 1
