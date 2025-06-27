@@ -376,7 +376,7 @@ struct DataCell: View {
                     let offsetX = value.location.x - value.startLocation.x
                     let offsetY = value.location.y - value.startLocation.y
                     
-                    // If the drag was minimal, treat it as a tap
+                    // If the drag was minimal, treat it as a tap for selection
                     if abs(offsetX) <= 5 && abs(offsetY) <= 5 {
                         if !isEditing {
                             onCellTap(position)
@@ -390,10 +390,12 @@ struct DataCell: View {
                     isDragActive = false
                 }
         )
-        .onTapGesture(count: 2) {
-            // Double tap to edit
-            editingText = text
-            isEditing = true
+        .onTapGesture {
+            // Single tap to edit
+            if !isEditing {
+                editingText = text
+                isEditing = true
+            }
         }
         .onChange(of: isEditing) { _, editing in
             if editing {
