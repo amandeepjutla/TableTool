@@ -71,8 +71,9 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
   - Click-drag selection for multi-cell ranges
   - Double-click any cell (including empty ones) to edit inline
   - Enter to save, Escape to cancel
-  - Fixed-size grid layout for consistent interaction
+  - TAB key navigation: moves to next cell in row, then to first cell of next row
   - Click outside table to clear selections
+- **Column Resizing**: Drag column borders to adjust width, with minimum width protection
 - **Format Detection**: Maintains heuristic CSV format detection
 - **Format Configuration**: Clean GroupBox-based UI that works properly on macOS
 - **Keyboard Shortcuts**: Cmd+R (add row), Cmd+C (add column), etc.
@@ -100,12 +101,35 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - ✅ Fixed visual state persistence issues after editing
 - ✅ Escape key clears selections
 
+**Navigation and Interaction Improvements:**
+- ✅ Implemented TAB key navigation for logical cell traversal
+- ✅ Added column resizing with draggable borders (jitter-free, snap-to-final)
+- ✅ Dynamic column width management with minimum width constraints
+- ✅ Hover cursor changes for resize handles
+
+**Known Issues:**
+- **Column Resize Jitter**: ✅ RESOLVED (2025-06-27)
+  - **Solution**: Snap-to-final approach - columns resize instantly when drag ends
+  - **Behavior**: No live preview during drag, but completely jitter-free result
+  - **Implementation**: Zero state changes during drag operation eliminates layout recalculation jitter
+  - **User Experience**: Clean, smooth column resizing with visual cursor feedback during drag
+
 **Technical Implementation:**
 - Single `.gesture()` modifier with proper gesture prioritization
 - Location-based drag calculation using `offsetX/offsetY` from start position
 - 5-pixel drag threshold to distinguish taps from drags
 - Background tap gesture on ScrollView to clear selections
 - Simplified background color logic without editing state interference
+- `ColumnResizeHandle` component with visual feedback and cursor management
+- Dynamic width storage per column with automatic initialization
+- TAB navigation: `focusedCell` state tracks current focus, moves logically through cells
+- Column resize: Snap-to-final approach - no state changes during drag, single atomic update on completion
+
+**Current Implementation Details:**
+- Column widths stored in `@State private var columnWidths: [CGFloat]`
+- Resize handles are 4px wide invisible areas between columns
+- Minimum column width constraint (50px) prevents unusably narrow columns
+- All existing cell selection, editing, and TAB navigation works with dynamic widths
 
 ## Project Scope
 

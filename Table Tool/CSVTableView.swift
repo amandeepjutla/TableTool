@@ -17,6 +17,11 @@ struct CSVTableView: View {
     @State private var dragStartPosition: CellPosition?
     @State private var isDragging = false
     @State private var focusedCell: CellPosition?
+    @State private var columnWidths: [CGFloat] = []
+    @State private var dragStartWidths: [CGFloat] = []
+    
+    private let defaultColumnWidth: CGFloat = 120
+    private let minColumnWidth: CGFloat = 50
     
     var body: some View {
         ScrollView([.horizontal, .vertical]) {
@@ -25,11 +30,24 @@ struct CSVTableView: View {
                 if document.configuration.firstRowAsHeader && !document.data.isEmpty {
                     HStack(spacing: 0) {
                         ForEach(0..<document.maxColumnCount, id: \.self) { columnIndex in
-                            HeaderCell(
-                                text: columnIndex < document.data[0].count ? document.data[0][columnIndex] : "",
-                                isSelected: selectedColumns.contains(columnIndex)
-                            ) {
-                                toggleColumnSelection(columnIndex)
+                            HStack(spacing: 0) {
+                                HeaderCell(
+                                    text: columnIndex < document.data[0].count ? document.data[0][columnIndex] : "",
+                                    isSelected: selectedColumns.contains(columnIndex),
+                                    width: getColumnWidth(columnIndex)
+                                ) {
+                                    toggleColumnSelection(columnIndex)
+                                }
+                                
+                                if columnIndex < document.maxColumnCount - 1 {
+                                    ColumnResizeHandle(columnIndex: columnIndex) { translation in
+                                        resizeColumn(columnIndex, translation: translation)
+                                    } onDragStart: {
+                                        startColumnResize()
+                                    } onDragEnd: { finalTranslation in
+                                        endColumnResize(columnIndex, finalTranslation: finalTranslation)
+                                    }
+                                }
                             }
                         }
                     }
@@ -39,23 +57,36 @@ struct CSVTableView: View {
                 ForEach(dataRowIndices, id: \.self) { rowIndex in
                     HStack(spacing: 0) {
                         ForEach(0..<document.maxColumnCount, id: \.self) { columnIndex in
-                            DataCell(
-                                text: cellValue(row: rowIndex, column: columnIndex),
-                                isSelected: selectedCells.contains(CellPosition(row: rowIndex, column: columnIndex)),
-                                isRowSelected: selectedRows.contains(rowIndex),
-                                isColumnSelected: selectedColumns.contains(columnIndex),
-                                isCurrentlyFocused: focusedCell == CellPosition(row: rowIndex, column: columnIndex),
-                                position: CellPosition(row: rowIndex, column: columnIndex)
-                            ) { newValue in
-                                document.updateCell(row: rowIndex, column: columnIndex, value: newValue)
-                            } onCellTap: { position in
-                                selectCell(position)
-                            } onDragStart: { position in
-                                startDrag(at: position)
-                            } onDragUpdate: { position in
-                                updateDragSelection(to: position)
-                            } onDragEnd: {
-                                endDrag()
+                            HStack(spacing: 0) {
+                                DataCell(
+                                    text: cellValue(row: rowIndex, column: columnIndex),
+                                    isSelected: selectedCells.contains(CellPosition(row: rowIndex, column: columnIndex)),
+                                    isRowSelected: selectedRows.contains(rowIndex),
+                                    isColumnSelected: selectedColumns.contains(columnIndex),
+                                    isCurrentlyFocused: focusedCell == CellPosition(row: rowIndex, column: columnIndex),
+                                    position: CellPosition(row: rowIndex, column: columnIndex),
+                                    width: getColumnWidth(columnIndex)
+                                ) { newValue in
+                                    document.updateCell(row: rowIndex, column: columnIndex, value: newValue)
+                                } onCellTap: { position in
+                                    selectCell(position)
+                                } onDragStart: { position in
+                                    startDrag(at: position)
+                                } onDragUpdate: { position in
+                                    updateDragSelection(to: position)
+                                } onDragEnd: {
+                                    endDrag()
+                                }
+                                
+                                if columnIndex < document.maxColumnCount - 1 {
+                                    ColumnResizeHandle(columnIndex: columnIndex) { translation in
+                                        resizeColumn(columnIndex, translation: translation)
+                                    } onDragStart: {
+                                        startColumnResize()
+                                    } onDragEnd: { finalTranslation in
+                                        endColumnResize(columnIndex, finalTranslation: finalTranslation)
+                                    }
+                                }
                             }
                         }
                     }
@@ -75,6 +106,12 @@ struct CSVTableView: View {
         .onKeyPress(.tab) {
             handleTabNavigation()
             return .handled
+        }
+        .onAppear {
+            initializeColumnWidths()
+        }
+        .onChange(of: document.maxColumnCount) { _, _ in
+            initializeColumnWidths()
         }
     }
     
@@ -171,6 +208,35 @@ struct CSVTableView: View {
         // If we're at the end, do nothing (as requested)
     }
     
+    private func initializeColumnWidths() {
+        let columnCount = document.maxColumnCount
+        if columnWidths.count != columnCount {
+            columnWidths = Array(repeating: defaultColumnWidth, count: columnCount)
+        }
+    }
+    
+    private func getColumnWidth(_ columnIndex: Int) -> CGFloat {
+        guard columnIndex < columnWidths.count else {
+            return defaultColumnWidth
+        }
+        return columnWidths[columnIndex]
+    }
+    
+    private func startColumnResize() {
+        dragStartWidths = columnWidths
+    }
+    
+    private func resizeColumn(_ columnIndex: Int, translation: CGFloat) {
+        // Do nothing during drag - no state changes to avoid jitter
+    }
+    
+    private func endColumnResize(_ columnIndex: Int, finalTranslation: CGFloat) {
+        guard columnIndex < columnWidths.count && columnIndex < dragStartWidths.count else { return }
+        
+        let startingWidth = dragStartWidths[columnIndex]
+        let newWidth = max(minColumnWidth, startingWidth + finalTranslation)
+        columnWidths[columnIndex] = newWidth
+    }
     
     private func toggleRowSelection(_ row: Int) {
         if selectedRows.contains(row) {
@@ -197,6 +263,7 @@ struct CellPosition: Hashable {
 struct HeaderCell: View {
     let text: String
     let isSelected: Bool
+    let width: CGFloat
     let onTap: () -> Void
     
     var body: some View {
@@ -213,7 +280,7 @@ struct HeaderCell: View {
                 .foregroundColor(.primary)
                 .padding(.horizontal, 4)
         }
-        .frame(width: 120, height: 28)
+        .frame(width: width, height: 28)
         .onTapGesture {
             onTap()
         }
@@ -227,6 +294,7 @@ struct DataCell: View {
     let isColumnSelected: Bool
     let isCurrentlyFocused: Bool
     let position: CellPosition
+    let width: CGFloat
     let onTextChange: (String) -> Void
     let onCellTap: (CellPosition) -> Void
     let onDragStart: (CellPosition) -> Void
@@ -271,14 +339,14 @@ struct DataCell: View {
             }
             .padding(.horizontal, 4)
         }
-        .frame(width: 120, height: 24) // Fixed size for consistent grid
+        .frame(width: width, height: 24) // Dynamic width for resizable columns
         .contentShape(Rectangle()) // Make entire area tappable
         .gesture(
             // Prioritize drag gesture over taps to fix gesture conflicts
             DragGesture()
                 .onChanged { value in
                     // Use location-based calculation instead of translation
-                    let cellWidth: CGFloat = 120
+                    let cellWidth: CGFloat = width
                     let cellHeight: CGFloat = 24
                     
                     // Calculate the offset from start position
@@ -354,6 +422,52 @@ struct DataCell: View {
     
     private var strokeWidth: CGFloat {
         return isSelected ? 2.0 : 0.5
+    }
+}
+
+struct ColumnResizeHandle: View {
+    let columnIndex: Int
+    let onResize: (CGFloat) -> Void
+    let onDragStart: () -> Void
+    let onDragEnd: (CGFloat) -> Void
+    
+    @State private var isDragging = false
+    @State private var finalTranslation: CGFloat = 0
+    
+    var body: some View {
+        Rectangle()
+            .fill(Color.clear)
+            .frame(width: 4, height: .infinity)
+            .contentShape(Rectangle())
+            .onHover { isHovering in
+                if isHovering {
+                    NSCursor.resizeLeftRight.set()
+                } else {
+                    NSCursor.arrow.set()
+                }
+            }
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        if !isDragging {
+                            isDragging = true
+                            onDragStart()
+                        }
+                        
+                        finalTranslation = value.translation.width
+                        // Don't call onResize during drag to avoid state changes
+                    }
+                    .onEnded { _ in
+                        isDragging = false
+                        NSCursor.arrow.set()
+                        onDragEnd(finalTranslation)
+                    }
+            )
+            .overlay(
+                Rectangle()
+                    .fill(isDragging ? Color.accentColor : Color.clear)
+                    .frame(width: 1)
+            )
     }
 }
 
