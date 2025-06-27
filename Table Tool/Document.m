@@ -87,7 +87,7 @@
     [self enableToolbarButtons];
     
     if(readingError) dispatch_async(dispatch_get_main_queue(), ^{
-        [self displayError:readingError];
+        [self displayError:self->readingError];
     });
     
     [self updateToolbarIcons];
@@ -1129,7 +1129,7 @@ writeRowsWithIndexes:(NSIndexSet *)rowIndexes
         if (result == NSModalResponseOK)
         {
 			NSError *error = nil;
-			NSData *data = [self dataWithCSVConfig:accessoryViewController.config error:&error];
+            NSData *data = [self dataWithCSVConfig:self->accessoryViewController.config error:&error];
 			if (!data) {
 				[self presentError:error modalForWindow:window delegate:nil didPresentSelector:NULL contextInfo:NULL];
 			}
