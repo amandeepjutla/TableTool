@@ -130,17 +130,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
-        print("DEBUG: applicationShouldOpenUntitledFile called")
-        let appSettings = AppSettings.shared
-        
-        // Check if we should restore windows instead
-        if appSettings.restoreWindowsOnLaunch && !appSettings.getDocumentsToRestore().isEmpty {
-            print("DEBUG: Preventing untitled file - will restore documents instead")
-            return false
-        }
-        
-        print("DEBUG: Allowing untitled file creation")
-        return true
+        print("DEBUG: applicationShouldOpenUntitledFile called - preventing file picker")
+        // Always return false to prevent automatic file picker on launch
+        return false
     }
     
     func applicationWillTerminate(_ notification: Notification) {
