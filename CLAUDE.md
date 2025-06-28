@@ -43,7 +43,7 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - `CSVHeuristic.swift` - Automatically detects CSV format using heuristic analysis
 
 **SwiftUI Views**:
-- `TableToolApp.swift` - Main App entry point with DocumentGroup
+- `TableToolApp.swift` - Main App entry point with DocumentGroup, AppSettings, SettingsView, and AppDelegate
 - `ContentView.swift` - Main interface with NavigationSplitView
 - `CSVTableView.swift` - Spreadsheet-like table view with cell editing and selection
 - `FormatConfigurationView.swift` - Format selection and configuration sheet
@@ -84,6 +84,7 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - **Format Configuration**: Clean GroupBox-based UI that works properly on macOS
 - **Keyboard Shortcuts**: Cmd+R (add row), Cmd+C (add column), etc.
 - **Window Commands**: ⌥⌘M (merge windows), ⌘⇧[ / ⌘⇧] (tab navigation)
+- **Window Restoration**: App-specific restoration system with ⌘, settings menu
 
 ### Architecture Changes
 - **Removed**: All legacy Objective-C files, NSDocument, AppDelegate, main.m, XIB files
@@ -125,6 +126,16 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - ✅ Delete buttons now properly enable/disable based on current selection
 - ✅ Row numbering accounts for header row configuration
 
+**Window Restoration System - IMPLEMENTED (2025-06-28):**
+- ✅ App-specific window restoration that works independently of macOS global settings
+- ✅ Settings menu (⌘,) with toggle for "Restore windows on launch"
+- ✅ Automatic restoration of CSV files that were open when app was last quit
+- ✅ Eliminates file picker flash on startup when restoring documents
+- ✅ Only restores documents that exist on disk (validates file existence)
+- ✅ AppDelegate integration with DocumentGroup for proper lifecycle management
+- ✅ UserDefaults persistence for restoration preference and document paths
+- ✅ Comprehensive debug logging for troubleshooting restoration process
+
 **Known Issues:**
 - **Column Resize Jitter**: ✅ RESOLVED (2025-06-27)
   - **Solution**: Snap-to-final approach - columns resize instantly when drag ends
@@ -146,6 +157,7 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - Single-click editing: Replaced double-click with single-click for immediate cell editing
 - Row/Column Selection: `RowHeaderCell` and `HeaderCell` components with isolated selection states
 - Delete functionality: Proper state management ensures buttons enable only when appropriate selections exist
+- Window Restoration: AppDelegate with lifecycle methods, AppSettings for UserDefaults persistence, SettingsView for user control
 
 **Current Implementation Details:**
 - Column widths stored in `@State private var columnWidths: [CGFloat]`
@@ -154,6 +166,7 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - All existing cell selection, editing, and TAB navigation works with dynamic widths
 - Row headers: 40px wide numbered cells for row selection, with proper numbering for header configurations
 - Selection isolation: Row, column, and cell selections are mutually exclusive for clear user experience
+- Window restoration: AppSettings manages UserDefaults storage, AppDelegate handles app lifecycle, validates file existence before restoration
 
 ## Performance Issues
 
