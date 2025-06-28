@@ -74,6 +74,11 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
   - TAB key navigation: moves to next cell in row, then to first cell of next row
   - Arrow key navigation: ↑↓←→ moves between cells
   - Click outside table to clear selections
+- **Row/Column Operations**:
+  - Click row headers (numbered cells on left) to select entire rows
+  - Click column headers to select entire columns
+  - Add/Delete rows and columns via toolbar buttons
+  - Delete buttons are enabled only when appropriate selections exist
 - **Column Resizing**: Drag column borders to adjust width, with minimum width protection
 - **Format Detection**: Maintains heuristic CSV format detection
 - **Format Configuration**: Clean GroupBox-based UI that works properly on macOS
@@ -92,7 +97,7 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 3. Build settings configured for Swift 6.0 and macOS 15+
 4. Document types properly configured for CSV and text files
 
-## Recent Fixes (2025-06-27)
+## Recent Fixes (2025-06-27/28)
 
 **CSVTableView.swift Selection - RESOLVED:**
 - ✅ Fixed gesture conflicts between tap and drag gestures
@@ -111,6 +116,14 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - ✅ Added arrow key navigation (↑↓←→) for cell movement
 - ✅ Narrowed sidebar default width (250px → 180px)
 - ✅ Removed tip section from sidebar
+
+**Delete Row/Column Functionality - RESOLVED (2025-06-28):**
+- ✅ Fixed non-functional delete row and delete column buttons
+- ✅ Added clickable row headers (numbered cells on left) for row selection
+- ✅ Added corner cell for proper layout alignment with row headers
+- ✅ Implemented proper selection isolation (row/column/cell selections are mutually exclusive)
+- ✅ Delete buttons now properly enable/disable based on current selection
+- ✅ Row numbering accounts for header row configuration
 
 **Known Issues:**
 - **Column Resize Jitter**: ✅ RESOLVED (2025-06-27)
@@ -131,12 +144,16 @@ xcodebuild -project "Table Tool.xcodeproj" -scheme "Table Tool" clean
 - Arrow key navigation: Uses `ArrowDirection` enum, respects data boundaries and header settings
 - Column resize: Snap-to-final approach - no state changes during drag, single atomic update on completion
 - Single-click editing: Replaced double-click with single-click for immediate cell editing
+- Row/Column Selection: `RowHeaderCell` and `HeaderCell` components with isolated selection states
+- Delete functionality: Proper state management ensures buttons enable only when appropriate selections exist
 
 **Current Implementation Details:**
 - Column widths stored in `@State private var columnWidths: [CGFloat]`
 - Resize handles are 4px wide invisible areas between columns
 - Minimum column width constraint (50px) prevents unusably narrow columns
 - All existing cell selection, editing, and TAB navigation works with dynamic widths
+- Row headers: 40px wide numbered cells for row selection, with proper numbering for header configurations
+- Selection isolation: Row, column, and cell selections are mutually exclusive for clear user experience
 
 ## Performance Issues
 

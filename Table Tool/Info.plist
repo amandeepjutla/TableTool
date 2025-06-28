@@ -69,5 +69,7 @@
 	<string>Copyright © 2025 tifalab</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSQuitAlwaysKeepsWindows</key>
+<true/>
 </dict>
 </plist>

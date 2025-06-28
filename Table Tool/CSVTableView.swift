@@ -28,6 +28,15 @@ struct CSVTableView: View {
                 // Header row if configured
                 if document.configuration.firstRowAsHeader && !document.data.isEmpty {
                     HStack(spacing: 0) {
+                        // Empty corner cell for row header space
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.1))
+                            .overlay(
+                                Rectangle()
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .frame(width: 40, height: 28)
+                        
                         ForEach(0..<document.maxColumnCount, id: \.self) { columnIndex in
                             HStack(spacing: 0) {
                                 HeaderCell(
@@ -55,6 +64,15 @@ struct CSVTableView: View {
                 // Data rows
                 ForEach(dataRowIndices, id: \.self) { rowIndex in
                     HStack(spacing: 0) {
+                        // Row header for row selection
+                        RowHeaderCell(
+                            rowIndex: rowIndex,
+                            displayNumber: displayRowNumber(for: rowIndex),
+                            isSelected: selectedRows.contains(rowIndex)
+                        ) {
+                            toggleRowSelection(rowIndex)
+                        }
+                        
                         ForEach(0..<document.maxColumnCount, id: \.self) { columnIndex in
                             HStack(spacing: 0) {
                                 DataCell(
@@ -284,6 +302,11 @@ struct CSVTableView: View {
     }
     
     private func toggleRowSelection(_ row: Int) {
+        // Clear other selections when selecting a row
+        selectedCells.removeAll()
+        selectedColumns.removeAll()
+        focusedCell = nil
+        
         if selectedRows.contains(row) {
             selectedRows.remove(row)
         } else {
@@ -292,10 +315,24 @@ struct CSVTableView: View {
     }
     
     private func toggleColumnSelection(_ column: Int) {
+        // Clear other selections when selecting a column
+        selectedCells.removeAll()
+        selectedRows.removeAll()
+        focusedCell = nil
+        
         if selectedColumns.contains(column) {
             selectedColumns.remove(column)
         } else {
             selectedColumns.insert(column)
+        }
+    }
+    
+    private func displayRowNumber(for rowIndex: Int) -> String {
+        // Show row numbers starting from 1 for data rows, accounting for header
+        if document.configuration.firstRowAsHeader {
+            return "\(rowIndex)"  // rowIndex is already adjusted for header
+        } else {
+            return "\(rowIndex + 1)"
         }
     }
 }
@@ -473,6 +510,32 @@ struct DataCell: View {
     
     private var strokeWidth: CGFloat {
         return isSelected ? 2.0 : 0.5
+    }
+}
+
+struct RowHeaderCell: View {
+    let rowIndex: Int
+    let displayNumber: String
+    let isSelected: Bool
+    let onTap: () -> Void
+    
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(isSelected ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.1))
+                .overlay(
+                    Rectangle()
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 0.5)
+                )
+            
+            Text(displayNumber)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(width: 40, height: 24)
+        .onTapGesture {
+            onTap()
+        }
     }
 }
 
